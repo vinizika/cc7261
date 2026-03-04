@@ -1,0 +1,90 @@
+services:
+
+  proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cc7261:pyzmq
+    container_name: proxy
+    volumes:
+      - ./proxy.py:/app/main.py
+    ports:
+      - 5555:5555
+      - 5556:5556
+
+  # P1: publica a hora atual (tópico TIME)
+  publisher_p1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cc7261:pyzmq
+    container_name: publisher_p1
+    volumes:
+      - ./publisher.py:/app/main.py
+    environment:
+      - NAME=P1
+      - PUBLISH_KIND=time
+      - INTERVAL=1
+    depends_on:
+      - proxy
+
+  # P2: publica um inteiro aleatório de 1 a 6 (tópico DICE)
+  publisher_p2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cc7261:pyzmq
+    container_name: publisher_p2
+    volumes:
+      - ./publisher.py:/app/main.py
+    environment:
+      - NAME=P2
+      - PUBLISH_KIND=dice
+      - INTERVAL=1
+    depends_on:
+      - proxy
+
+  # S1: recebe apenas TIME (P1)
+  subscriber_time:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cc7261:pyzmq
+    container_name: subscriber_time
+    volumes:
+      - ./subscriber.py:/app/main.py
+    environment:
+      - NAME=S_TIME
+      - SUB_TOPICS=TIME
+    depends_on:
+      - proxy
+
+  # S2: recebe apenas DICE (P2)
+  subscriber_dice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cc7261:pyzmq
+    container_name: subscriber_dice
+    volumes:
+      - ./subscriber.py:/app/main.py
+    environment:
+      - NAME=S_DICE
+      - SUB_TOPICS=DICE
+    depends_on:
+      - proxy
+
+  # S3: recebe TIME e DICE (P1 e P2)
+  subscriber_all:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cc7261:pyzmq
+    container_name: subscriber_all
+    volumes:
+      - ./subscriber.py:/app/main.py
+    environment:
+      - NAME=S_ALL
+      - SUB_TOPICS=TIME,DICE
+    depends_on:
+      - proxy
